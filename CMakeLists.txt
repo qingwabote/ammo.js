@@ -25,7 +25,7 @@ set(USE_GRAPHICAL_BENCHMARK OFF)
 set(USE_GLUT OFF)
 
 # Build Release by default
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Build Type")
+set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build Type")
 
 # Default is 64*1024*1024 = 64MB
 set(TOTAL_MEMORY 67108864 CACHE STRING "Total Memory")
@@ -35,10 +35,10 @@ set(ALLOW_MEMORY_GROWTH 0 CACHE STRING "Allow Memory Growth")
 
 set(EMCC_ARGS
   --extern-pre-js ${AMMO_FRONT_MATTER_FILE}
-  --llvm-lto 1
+  # --llvm-lto 1
   --post-js glue.js
   --post-js ${AMMO_ONLOAD_FILE}
-  -O3
+  # -O3
   -s ALLOW_MEMORY_GROWTH=${ALLOW_MEMORY_GROWTH}
   -s ALLOW_TABLE_GROWTH=1
   -s EXPORTED_FUNCTIONS=["_malloc"]
@@ -48,7 +48,9 @@ set(EMCC_ARGS
   -s MODULARIZE=1
   -s NO_EXIT_RUNTIME=1
   -s NO_FILESYSTEM=1
-  -s TOTAL_MEMORY=${TOTAL_MEMORY})
+  -s TOTAL_MEMORY=${TOTAL_MEMORY}
+  -s ENVIRONMENT=web
+  -s EXPORT_ES6=1)
 
 if(${CLOSURE})
   # Ignore closure errors about the bullet Node class
@@ -93,7 +95,7 @@ add_custom_command(
   VERBATIM)
 add_custom_command(
   OUTPUT glue.o
-  COMMAND emcc glue.cpp ${EMCC_GLUE_ARGS} -o glue.o
+  COMMAND emcc -g glue.cpp ${EMCC_GLUE_ARGS} -o glue.o
   DEPENDS glue.cpp ${AMMO_HEADER_FILE}
   COMMENT "Building ammo bindings"
   VERBATIM)
@@ -101,19 +103,19 @@ add_custom_target(ammo-bindings ALL DEPENDS glue.js glue.o)
 
 
 #######################################
-add_custom_command(
-  OUTPUT ammo.js
-  COMMAND emcc glue.o ${BULLET_LIBS} ${EMCC_JS_ARGS} -o ammo.js
-  DEPENDS ammo-bindings ${AMMO_FRONT_MATTER_FILE} ${AMMO_ONLOAD_FILE} ${BULLET_TARGETS}
-  COMMENT "Building ammo javascript"
-  VERBATIM)
-add_custom_target(ammo-javascript ALL DEPENDS ammo.js)
+# add_custom_command(
+#   OUTPUT ammo.js
+#   COMMAND emcc glue.o ${BULLET_LIBS} ${EMCC_JS_ARGS} -o ammo.js
+#   DEPENDS ammo-bindings ${AMMO_FRONT_MATTER_FILE} ${AMMO_ONLOAD_FILE} ${BULLET_TARGETS}
+#   COMMENT "Building ammo javascript"
+#   VERBATIM)
+# add_custom_target(ammo-javascript ALL DEPENDS ammo.js)
 
 
 #######################################
 add_custom_command(
   OUTPUT ammo.wasm.js ammo.wasm.wasm
-  COMMAND emcc glue.o ${BULLET_LIBS} ${EMCC_WASM_ARGS} -o ammo.wasm.js
+  COMMAND emcc -g glue.o ${BULLET_LIBS} ${EMCC_WASM_ARGS} -o ammo.wasm.js
   DEPENDS ammo-bindings ${AMMO_FRONT_MATTER_FILE} ${AMMO_ONLOAD_FILE} ${BULLET_TARGETS}
   COMMENT "Building ammo webassembly"
   VERBATIM)
